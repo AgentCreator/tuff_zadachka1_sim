@@ -4,17 +4,17 @@
 
 // =============
 const springConstant = 1;
-const dt = .001; 
+const dt = 1e-4; 
 let springX = -350;
 const air_coef = 1;
 const ground_coef = 1;
-const ballMass = 1;
+const ballMass = 3;
 const pendulumMass = 1;
 const pendulumX = 0;
 const pendulumL = 100;
 const g = 9.81;
 const energyConservedDuringCollision = 1;
-const speedup = 1000;
+const speedup = 2e3;
 
 let ballState = { v: 0, x: -20 };
 let pendState = { thetaV: 0, theta: PI / 2 };
@@ -22,7 +22,9 @@ let pendState = { thetaV: 0, theta: PI / 2 };
 let collisions = 0;
 let shouldCollide = true;
 let isDeforming = false;
+const theta_0 = pendState.theta;
 let savedVelocity = 0;
+let direction = 1;
 
 
 function setup() {
@@ -51,6 +53,7 @@ function drawBallSpring() {
     ballState.v *= ground_coef;
     ballState.x += ballState.v * dt;
     if (deform() < 0 && !isDeforming) {
+        // console.log(savedVelocity);
         isDeforming = true;
         savedVelocity = ballState.v;
         console.log("saved",ballState.v)
@@ -76,7 +79,6 @@ function draw() {
 }
 
 function ballCollision() {
-    const pendVelocityX = pendState.thetaV * pendulumL;
     const dis = dist(
         ballState.x,
         0,
@@ -85,10 +87,13 @@ function ballCollision() {
     );
     if (dis >= 20) shouldCollide = true;
     if (dis <= 20 && shouldCollide) {
+        
         console.log("collide", ++collisions);
         shouldCollide = false;
         const e = sqrt(energyConservedDuringCollision);
 
+
+        const pendVelocityX = pendState.thetaV * pendulumL;
         const m1 = ballMass;
         const m2 = pendulumMass;
         const v1 = ballState.v;
@@ -100,7 +105,9 @@ function ballCollision() {
             (m1 + m2);
 
         ballState.v = new_ball_speed;
+        savedVelocity = new_ball_speed;
         pendState.thetaV = new_pend_speed / pendulumL;
+        direction = sgn(pendState.thetaV);
     }
 }
 
@@ -120,8 +127,31 @@ function drawPendulum() {
     );
 
     // console.log(pendState.theta);
+    const velocity = (theta) => sqrt(2*pendulumMass*g*pendulumL*(cos(theta) - cos(theta_0))-ballMass*savedVelocity*savedVelocity)/(pendulumL*sqrt(pendulumMass));
 
-    pendState.thetaV -= g / pendulumL * sin(pendState.theta) * dt;
+    
+
+    const v = velocity(pendState.theta);
+
+    // const v2 = velocity(pendState.theta + v*dt) + v;
+    if (Math.cos(pendState.theta) <= ((ballMass*savedVelocity*savedVelocity)/(2*pendulumMass*g*pendulumL)-Math.cos(theta_0))) {
+        
+        direction = -sgn(pendState.theta);
+    }
+
+    if (isNaN(v) || v == 0) {
+        pendState.thetaV -= g / pendulumL * sin(pendState.theta) * dt;
+    } else {
+        pendState.thetaV = direction * v;
+    }
+
+    
     pendState.thetaV *= air_coef;
     pendState.theta += pendState.thetaV * dt;
 }
+function sgn(a) {
+    if (a == 0) return 0;
+    if (a > 0) return 1;
+    return -1;
+}
+

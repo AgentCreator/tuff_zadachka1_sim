@@ -1,8 +1,8 @@
 {
-  "createdAt": "2026-03-15T16:03:10.293",
+  "createdAt": "2026-03-26T12:21:06.065",
   "projectType": "p5js",
   "include": [
-    "sketches/**/*.js",
+    "sketches/**/*.ts",
     "include/**/*.js",
     "import/**/*.js",
     "common/**/*.js",
@@ -10,7 +10,6 @@
     "import/**/*.d.ts",
     "common/**/*.d.ts",
     "/Users/sashko/.vscode/extensions/peterdickx.p5-studio-1.2.1/assets/1.11/p5types/global.d.ts",
-    "/Users/sashko/.vscode/extensions/peterdickx.p5-studio-1.2.1/assets/1.11/p5types/p5helper.d.ts",
-    "sketches/sketch1.ts"
+    "/Users/sashko/.vscode/extensions/peterdickx.p5-studio-1.2.1/assets/1.11/p5types/p5helper.d.ts"
   ]
 }
