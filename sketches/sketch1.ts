@@ -1,30 +1,30 @@
-// Start coding with P5 here!
-// Have a look at the P5 Reference: https://p5js.org/reference/
-// Click the P5 button at the top to run your sketch! ⤴
 
-// =============
-const springConstant = 1;
-const dt = 1e-4; 
-let springX = -350;
-const air_coef = 1;
-const ground_coef = 1;
-const ballMass = 3;
+// ============= ПАРАМЕТРИ
+const springConstant = 1; // те саме що k в F=-kx
+const dt = 1e-2; // одиниця часу. чим менше тим точніше, але повільніше
+const springX = -350;
+const air_coef = 1; // скільки відсотків швидкості маятника зберігається? (кожного dt)
+const ballMass = 1;
 const pendulumMass = 1;
 const pendulumX = 0;
 const pendulumL = 100;
 const g = 9.81;
 const energyConservedDuringCollision = 1;
-const speedup = 2e3;
+const mu = 0.15;
+const speedup = 10; // на скільки швидко запускається симуляція? щоб можна було мати малий dt і не чекати півроку до зіткнення
 
-let ballState = { v: 0, x: -20 };
-let pendState = { thetaV: 0, theta: PI / 2 };
-// =============
+const ballState = { v: 0, x: -20 };
+const pendState = { thetaV: 0, theta: Math.PI/2 };
+// ============= ПАРЕМЕТРИ СКІНЧИЛИСЯ
+
 let collisions = 0;
 let shouldCollide = true;
 let isDeforming = false;
 const theta_0 = pendState.theta;
 let savedVelocity = 0;
+let savedVelocitySpring = 0;
 let direction = 1;
+let energyLostByMu = 0;
 
 
 function setup() {
@@ -49,19 +49,25 @@ function drawBallSpring() {
     circle(ballState.x, 0, 20);
 
     const ballA = springBallAcceleration();
+    const frictionA = mu * g
+    if (ballState.v > 0) {
+        ballState.v = Math.max(0, ballState.v - frictionA * dt);
+    } else if (ballState.v < 0) {
+        ballState.v = Math.min(0, ballState.v + frictionA * dt);
+    }
+    console.log(ballA)
     ballState.v += ballA * dt;
-    ballState.v *= ground_coef;
     ballState.x += ballState.v * dt;
     if (deform() < 0 && !isDeforming) {
         // console.log(savedVelocity);
         isDeforming = true;
-        savedVelocity = ballState.v;
+        savedVelocitySpring = ballState.v;
         console.log("saved",ballState.v)
     }
     if (deform() == 0 && isDeforming) {
         isDeforming = false;
         console.log("new",ballState.v);
-        ballState.v = -savedVelocity;
+        ballState.v = -savedVelocitySpring;
     }
 
 }
@@ -87,7 +93,7 @@ function ballCollision() {
     );
     if (dis >= 20) shouldCollide = true;
     if (dis <= 20 && shouldCollide) {
-        
+        energyLostByMu = ballMass * (savedVelocity * savedVelocity - ballState.v*ballState.v);
         console.log("collide", ++collisions);
         shouldCollide = false;
         const e = sqrt(energyConservedDuringCollision);
@@ -107,7 +113,7 @@ function ballCollision() {
         ballState.v = new_ball_speed;
         savedVelocity = new_ball_speed;
         pendState.thetaV = new_pend_speed / pendulumL;
-        direction = sgn(pendState.thetaV);
+        direction = Math.sign(pendState.thetaV);
     }
 }
 
@@ -127,31 +133,29 @@ function drawPendulum() {
     );
 
     // console.log(pendState.theta);
-    const velocity = (theta) => sqrt(2*pendulumMass*g*pendulumL*(cos(theta) - cos(theta_0))-ballMass*savedVelocity*savedVelocity)/(pendulumL*sqrt(pendulumMass));
+    const velocity = sqrt(
+        2*pendulumMass*g*pendulumL*(cos(pendState.theta) - cos(theta_0))
+        -ballMass*savedVelocity*savedVelocity - energyLostByMu
+    )
+    /(pendulumL*sqrt(pendulumMass));
 
     
 
-    const v = velocity(pendState.theta);
-
-    // const v2 = velocity(pendState.theta + v*dt) + v;
-    if (Math.cos(pendState.theta) <= ((ballMass*savedVelocity*savedVelocity)/(2*pendulumMass*g*pendulumL)-Math.cos(theta_0))) {
-        
-        direction = -sgn(pendState.theta);
+    if (Math.cos(pendState.theta) <= ((ballMass*savedVelocity*savedVelocity+energyLostByMu)/(2*pendulumMass*g*pendulumL)+Math.cos(theta_0))) {
+        // console.log("direction switch")
+        direction = -Math.sign(pendState.theta);
     }
 
-    if (isNaN(v) || v == 0) {
+    if (isNaN(velocity) || velocity == 0) {
         pendState.thetaV -= g / pendulumL * sin(pendState.theta) * dt;
     } else {
-        pendState.thetaV = direction * v;
+        pendState.thetaV = direction * velocity;
     }
 
     
     pendState.thetaV *= air_coef;
     pendState.theta += pendState.thetaV * dt;
 }
-function sgn(a) {
-    if (a == 0) return 0;
-    if (a > 0) return 1;
-    return -1;
-}
+
+
 
