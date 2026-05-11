@@ -10,10 +10,10 @@ const pendulumX = 0;
 const pendulumL = 100;
 const g = 981;
 const energyConservedDuringCollision = 1;
-const mu = 0;
-const speedup = 1/(60*dt); // на скільки швидко запускається симуляція? щоб можна було мати малий dt і не чекати півроку до зіткнення
+const mu = 0.15;
+const speedup = 10; // на скільки швидко запускається симуляція? щоб можна було мати малий dt і не чекати півроку до зіткнення
 
-const ballState = { v: 10, x: -100 };
+const ballState = { v: 0, x: -20 };
 const pendState = { thetaV: 0, theta: Math.PI/2 };
 // ============= ПАРЕМЕТРИ СКІНЧИЛИСЯ
 
@@ -22,7 +22,6 @@ let shouldCollide = true;
 let isDeforming = false;
 const theta_0 = pendState.theta;
 let savedVelocity = 0;
-let t = 0;
 let savedVelocitySpring = 0;
 let direction = 1;
 let energyLostByMu = 0;
@@ -50,7 +49,7 @@ function drawBallSpring() {
     circle(ballState.x, 0, 20);
 
     const ballA = springBallAcceleration();
-    const frictionA = mu * g
+    const frictionA = mu * g;
     if (ballState.v > 0) {
         ballState.v = Math.max(0, ballState.v - frictionA * dt);
     } else if (ballState.v < 0) {
@@ -78,7 +77,7 @@ function draw() {
     for(let i=0;i<speedup;i++) {
         background("white");
         fill("white");
-        t++;
+        // t++;
         drawBallSpring();
         drawPendulum();
         ballCollision();
@@ -97,7 +96,7 @@ function ballCollision() {
     if (dis <= 20 && shouldCollide) {
         energyLostByMu = ballMass * (savedVelocity * savedVelocity - ballState.v*ballState.v);
         console.log("collide", ++collisions);
-        console.log(t*dt);
+        // console.log(t*dt);
         shouldCollide = false;
         const e = sqrt(energyConservedDuringCollision);
 
